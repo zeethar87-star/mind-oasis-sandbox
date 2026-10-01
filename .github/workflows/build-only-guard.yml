@@ -1,0 +1,26 @@
+name: build-only guard
+
+# This public repo must hold only the built web app. Anything else (source,
+# prompts, research, state) belongs in the private MIND-OASIS repo.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Only allow-listed paths
+        run: |
+          allowed='^(index\.html|main\.dart\.js|flutter\.js|flutter_bootstrap\.js|flutter_service_worker\.js|manifest\.json|favicon\.png|version\.json|SOURCE_SHA\.txt|README\.md|\.nojekyll|assets/.*|canvaskit/.*|fonts/.*|icons/.*|\.github/workflows/build-only-guard\.yml)$'
+          bad=$(git ls-files | grep -Ev "$allowed" || true)
+          if [ -n "$bad" ]; then
+            echo "Not allowed in the public sandbox (move to the private repo):"
+            echo "$bad"
+            exit 1
+          fi
+          echo "OK: $(git ls-files | wc -l) files, all build output."
